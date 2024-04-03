@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  pgdatabase:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: ny_taxi
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d ny_taxi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - "./ny_taxi_postgres_data:/var/lib/postgresql/data"
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "8080:80"
+
+  ingest_data:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - user=root
+      - password=root
+      - host=pgdatabase
+      - port=5432
+      - db=ny_taxi
+      - table_name=yellow_taxi_trips
+      - url=https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz
+
+    depends_on:
+      - pgdatabase
+    command: --user=root --password=root --host=pgdatabase --port=5432 --db=ny_taxi --table_name=yellow_taxi_trips --url=https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz
+
+
