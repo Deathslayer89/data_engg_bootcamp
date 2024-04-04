@@ -3,7 +3,7 @@
 *.tfstate.backup
 
 # Terraform lock file
-terraform.lock.hcl
+.terraform.lock.hcl
 # Local .terraform directories
 **/.terraform/*
 
