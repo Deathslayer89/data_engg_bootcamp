@@ -1,49 +1,30 @@
-import psycopg2
 import os
+import pandas as pd
+from sqlalchemy import create_engine
 
-# Connect to the PostgreSQL database
-conn = psycopg2.connect(
-    host="localhost",
-    database="ny_taxi",
-    port=5432,
-    user="root",
-    password="root"
-)
+def main():
+    # Get the current working directory
+    cwd = os.getcwd()
 
-# Create a cursor object
-cur = conn.cursor()
+    # Specify the filename to read data from
+    filename = "taxi_zone_lookup.csv"
 
-# Get the current working directory
-cwd = os.getcwd()
+    # Construct the full file path
+    file_path = os.path.join(cwd, filename)
 
-# Specify the filename to read data from
-filename = "taxi_zone_lookup.csv"
+    # Create a SQLAlchemy engine
+    engine = create_engine(f'postgresql://root:root@pgdatabase:5432/ny_taxi')
 
-# Construct the full file path
-file_path = os.path.join(cwd, filename)
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(file_path)
 
-# Open the file and read its contents
-with open(file_path, "r") as file:
-    lines = file.readlines()
+    # Create the zones table if it doesn't exist
+    df.head(n=0).to_sql('zones', engine, if_exists='replace', index=False)
 
-# Get the column names from the first line
-column_names = lines[0].strip().split(",")
+    # Insert the data into the zones table
+    df.to_sql('zones', engine, if_exists='append', index=False)
 
-# Skip the first line (column names) when inserting data
-for line in lines[1:]:
-    values = line.strip().split(",")
-    
-    # Construct the SQL INSERT statement with column names
-    columns = ", ".join(column_names)
-    placeholders = ", ".join(["%s"] * len(column_names))
-    insert_query = f"INSERT INTO your_table ({columns}) VALUES ({placeholders})"
-    
-    # Execute the INSERT statement
-    cur.execute(insert_query, values)
+    print("Data ingested into the zones table successfully.")
 
-# Commit the changes to the database
-conn.commit()
-
-# Close the cursor and the database connection
-cur.close()
-conn.close()
+if __name__ == '__main__':
+    main()
